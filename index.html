@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Lantern Night — 灯りの夜</title>
+  <meta name="description" content="Three.js で描くハロウィンの夜。鬼火になって 13 のカボチャに灯をともすインタラクティブアート。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Zen+Antique&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 7c-1-2.5-.4-4.4 1.6-5.2' fill='none' stroke='%237cc46a' stroke-width='2.4' stroke-linecap='round'/%3E%3Cellipse cx='10.5' cy='18' rx='7.5' ry='10' fill='%23e8730c'/%3E%3Cellipse cx='21.5' cy='18' rx='7.5' ry='10' fill='%23e8730c'/%3E%3Cellipse cx='16' cy='18' rx='7' ry='11' fill='%23ff8f2a'/%3E%3Cpath d='M9 14l3.4-3 1.6 3.6zM23 14l-3.4-3-1.6 3.6zM8.5 20q7.5 7 15 0l-2.4 1.4-1.2-1.6-1.8 1.8-2.1-1.8-2.1 1.8-1.8-1.8-1.2 1.6z' fill='%23ffe08a'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="hud" class="hidden">
+    <div class="counters">
+      <div class="counter" id="c-pumpkin" title="灯したカボチャ">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 7c-1-2.5-.4-4.4 1.6-5.2" fill="none" stroke="#7cc46a" stroke-width="2.2" stroke-linecap="round"/>
+          <ellipse cx="10.5" cy="18" rx="7.5" ry="10" fill="#e8730c"/>
+          <ellipse cx="21.5" cy="18" rx="7.5" ry="10" fill="#e8730c"/>
+          <ellipse cx="16" cy="18" rx="7" ry="11" fill="#ff8f2a"/>
+          <path d="M9 14l3.4-3 1.6 3.6zM23 14l-3.4-3-1.6 3.6zM8.5 20q7.5 7 15 0l-2.4 1.4-1.2-1.6-1.8 1.8-2.1-1.8-2.1 1.8-1.8-1.8-1.2 1.6z" fill="#ffe08a"/>
+        </svg>
+        <span class="num" id="lit">0</span><span class="den">/ 13</span>
+      </div>
+      <div class="counter" id="c-ghost" title="解き放ったおばけ">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M6 28V15a10 10 0 0 1 20 0v13l-3.4-2.6L19.4 28 16 25.4 12.6 28l-3.2-2.6z" fill="#e9eeff"/>
+          <ellipse cx="12.3" cy="15" rx="1.7" ry="2.4" fill="#120c22"/>
+          <ellipse cx="19.7" cy="15" rx="1.7" ry="2.4" fill="#120c22"/>
+          <ellipse cx="16" cy="20.5" rx="1.6" ry="1.9" fill="#120c22"/>
+        </svg>
+        <span class="num" id="freed">0</span>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="btn-sound" class="icon-btn" title="サウンド（M）" aria-label="サウンド切り替え">
+        <svg viewBox="0 0 24 24"><path class="on" d="M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="off" d="M4 9h4l5-4v14l-5-4H4zM17 9l5 6M22 9l-5 6"/></svg>
+      </button>
+      <button id="btn-thunder" class="icon-btn" title="稲妻を呼ぶ（L）" aria-label="稲妻">
+        <svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 8-12h-6z"/></svg>
+      </button>
+      <button id="btn-bats" class="icon-btn" title="コウモリを放つ（B）" aria-label="コウモリ">
+        <svg viewBox="0 0 24 24"><path d="M12 9.5l-1-2-.6 2.2C8 8 4.8 7.5 2 9c2 .6 2.8 2.2 2.6 3.8 1.4-1 3-1 4 .4.8-.8 2-1 3.4-.2 1.4-.8 2.6-.6 3.4.2 1-1.4 2.6-1.4 4-.4C19.2 11.2 20 9.6 22 9c-2.8-1.5-6-1-8.4.7L13 7.5z"/></svg>
+      </button>
+      <button id="btn-reset" class="icon-btn" title="灯を消して最初から（R）" aria-label="リセット">
+        <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>
+      </button>
+    </div>
+
+    <div id="hint">
+      <span><b data-touch="スワイプ">ドラッグ</b> 見回す</span>
+      <span><b data-touch="ピンチ">ホイール</b> 寄る・引く</span>
+      <span><b>カボチャ</b> <i data-touch="タップで灯す">クリックで灯す</i></span>
+      <span><b>おばけ</b> <i data-touch="タップで驚かす">クリックで驚かす</i></span>
+      <span><b>空・屋敷</b> <i data-touch="タップで何かが起こる">クリックで何かが起こる</i></span>
+    </div>
+  </div>
+
+  <div id="toast" aria-live="polite"></div>
+
+  <div id="intro">
+    <div class="intro-inner">
+      <p class="eyebrow">an interactive halloween night</p>
+      <h1>Lantern Night</h1>
+      <p class="jp-title">灯りの夜</p>
+      <p class="lead">
+        <span>月の昇った墓地のそばで、</span><span>十三のカボチャが眠っている。</span><br />
+        <span>あなたは迷い込んだ鬼火。</span><span>ひとつずつ灯をともして、</span><span>ハロウィンの夜を目覚めさせよう。</span>
+      </p>
+      <button id="start" disabled><span id="start-label">夜を準備しています…</span></button>
+      <p class="note" id="intro-note">音が出ます ・ ドラッグで見回す ・ クリックで灯す</p>
+    </div>
+  </div>
+
+  <div id="finale" class="hidden">
+    <h2>Happy Halloween</h2>
+    <p>十三の灯がそろい、カボチャの王が目を覚ました。</p>
+    <div class="row">
+      <button id="again">もう一度灯す</button>
+      <button id="stay" class="ghost-btn">このまま眺める</button>
+    </div>
+  </div>
+
+  <noscript>このページの表示には JavaScript と WebGL が必要です。</noscript>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
